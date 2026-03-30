@@ -1,91 +1,198 @@
-# iterm-mcp 
-A Model Context Protocol server that provides access to your iTerm session.
+# cmux-mcp
 
-![Main Image](.github/images/demo.gif)
+[한국어 문서 (Korean)](./README.ko.md)
 
-### Features
+MCP server that gives AI agents full control of your cmux terminal. Built on proven technology from iterm-mcp but completely rewritten for cmux's native CLI.
 
-**Efficient Token Use:** iterm-mcp gives the model the ability to inspect only the output that the model is interested in. The model typically only wants to see the last few lines of output even for long running commands. 
+## Overview
 
-**Natural Integration:** You share iTerm with the model. You can ask questions about what's on the screen, or delegate a task to the model and watch as it performs each step.
+cmux-mcp is a Model Context Protocol server that enables AI agents (Claude, etc.) to interact with your cmux terminal as if you were typing. Unlike AppleScript-based approaches, this implementation uses cmux's stable CLI commands—`cmux send`, `cmux read-screen`, and `cmux send-key`—which connect via Unix socket and work reliably even when cmux is backgrounded.
 
-**Full Terminal Control and REPL support:** The model can start and interact with REPL's as well as send control characters like ctrl-c, ctrl-z, etc.
+- **Repository**: https://github.com/daegweon/cmux-mcp
+- **Forked from**: [ferrislucas/iterm-mcp](https://github.com/ferrislucas/iterm-mcp)
+- **Built for**: [cmux](https://github.com/manaflow-ai/cmux)
 
-**Easy on the Dependencies:** iterm-mcp is built with minimal dependencies and is runnable via npx. It's designed to be easy to add to Claude Desktop and other MCP clients. It should just work.
+## Features
 
+- **Background Operation** — Works while cmux is in the background. No window focus stealing, no focus conflicts.
+- **Token Efficient** — Read only the lines you need. Agents inspect exactly the output they care about, not the entire buffer.
+- **Full Terminal Control** — Send commands, read output, send Ctrl+C, Ctrl+Z, Escape, and custom escape sequences.
+- **REPL Support** — Interact with Node, Python, Ruby, bash, and other REPLs. Perfect for iterative exploration.
+- **Smart Completion Detection** — Monitors CPU activity to know when a command finishes, not just when output stops.
+- **Minimal Dependencies** — Built on `@modelcontextprotocol/sdk` only. No complex build chains or system dependencies.
+- **Broad Compatibility** — Works with Claude Desktop, Claude Code, and any MCP client.
 
-## Safety Considerations
+## Why CLI Over AppleScript?
 
-* The user is responsible for using the tool safely.
-* No built-in restrictions: iterm-mcp makes no attempt to evaluate the safety of commands that are executed.
-* Models can behave in unexpected ways. The user is expected to monitor activity and abort when appropriate.
-* For multi-step tasks, you may need to interrupt the model if it goes off track. Start with smaller, focused tasks until you're familiar with how the model behaves. 
+| Feature | AppleScript Approach | cmux CLI Approach |
+|---------|---------------------|-------------------|
+| Background operation | May focus app, steal keyboard | Works via Unix socket, no focus needed |
+| Terminal reading | Requires Ghostty's debug-only `write_scrollback_file` action | `cmux read-screen` is stable production CLI |
+| Reliability | AppleScript can fail during app initialization | CLI connects via socket, more resilient |
+| Surface targeting | Always targets front window | `--surface` flag supports precise targeting |
+| Key support | Limited to ASCII character codes | Named keys: `ctrl+c`, `escape`, arrows, `enter` |
 
-### Tools
-- `write_to_terminal` - Writes to the active iTerm terminal, often used to run a command. Returns the number of lines of output produced by the command.
-- `read_terminal_output` - Reads the requested number of lines from the active iTerm terminal.
-- `send_control_character` - Sends a control character to the active iTerm terminal.
+## Resolved cmux Issues
 
-### Requirements
+cmux-mcp works around and handles several known cmux limitations:
 
-* iTerm2 must be running
-* Node version 18 or greater
+- **manaflow-ai/cmux#152** — `read-screen` was debug-only; now exposed in production. cmux-mcp uses this stable API instead of unreliable Ghostty actions.
+- **manaflow-ai/cmux#2042** — `send` silently fell back to focused pane for invalid surface IDs. Architecture supports `--surface` flag to avoid this.
+- **manaflow-ai/cmux#1715** — TabManager unavailable during app startup caused hook errors. Socket-based CLI is more resilient to timing issues.
+- **manaflow-ai/cmux#2153** — `send-key` lacked arrow key support. Now fixed upstream; cmux-mcp's `send_control_character` uses the updated API.
+- **manaflow-ai/cmux#2210** — Sidebar toggle caused SIGWINCH prompt corruption. cmux-mcp reads terminal buffer after settling delay to avoid corrupted reads.
 
+## Tools
+
+### write_to_terminal
+
+Sends text or commands to the active cmux terminal. Automatically appends `Enter` to simulate pressing the key.
+
+```json
+{
+  "name": "write_to_terminal",
+  "description": "Writes text to the active cmux terminal - often used to run a command in the terminal",
+  "input": {
+    "command": "npm test"
+  }
+}
+```
+
+**Returns**: Number of new output lines produced, so the agent knows exactly how much to read back.
+
+### read_terminal_output
+
+Reads the last N lines from the active cmux terminal. Uses `cmux read-screen --lines N` for recent output or `--scrollback` for full history.
+
+```json
+{
+  "name": "read_terminal_output",
+  "description": "Reads the output from the active cmux terminal",
+  "input": {
+    "linesOfOutput": 50
+  }
+}
+```
+
+**Returns**: Plain text of terminal output.
+
+### send_control_character
+
+Sends control characters and special keys: Ctrl+C, Ctrl+Z, Escape, telnet escape (]). Uses `cmux send-key` for named keys and `cmux send` for raw escape sequences.
+
+```json
+{
+  "name": "send_control_character",
+  "description": "Sends a control character to the active cmux terminal (e.g., Control-C, or special sequences like ']' for telnet escape)",
+  "input": {
+    "letter": "C"
+  }
+}
+```
+
+**Returns**: Confirmation of the control character sent.
+
+## Requirements
+
+- **cmux.app** must be installed and running
+- **Node.js** 18 or later
+- **macOS**
 
 ## Installation
 
-To use with Claude Desktop, add the server config:
+### Claude Code
 
-On macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
+Add to `~/.claude/settings.json`:
 
 ```json
 {
   "mcpServers": {
-    "iterm-mcp": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "iterm-mcp"
-      ]
+    "cmux-mcp": {
+      "command": "node",
+      "args": ["/path/to/cmux-mcp/build/index.js"]
     }
   }
 }
 ```
 
-### Installing via Smithery
+### Claude Desktop
 
-To install iTerm for Claude Desktop automatically via [Smithery](https://smithery.ai/server/iterm-mcp):
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "cmux-mcp": {
+      "command": "node",
+      "args": ["/path/to/cmux-mcp/build/index.js"]
+    }
+  }
+}
+```
+
+### Using npx (Quick Test)
 
 ```bash
-npx -y @smithery/cli install iterm-mcp --client claude
+npx -y cmux-mcp
 ```
-[![smithery badge](https://smithery.ai/badge/iterm-mcp)](https://smithery.ai/server/iterm-mcp)
 
 ## Development
 
-Install dependencies:
-```bash
-yarn install
-```
-
-Build the server:
-```bash
-yarn run build
-```
-
-For development with auto-rebuild:
-```bash
-yarn run watch
-```
-
-### Debugging
-
-Since MCP servers communicate over stdio, debugging can be challenging. We recommend using the [MCP Inspector](https://github.com/modelcontextprotocol/inspector), which is available as a package script:
+### Clone and Install
 
 ```bash
-yarn run inspector
-yarn debug <command>
+git clone https://github.com/daegweon/cmux-mcp.git
+cd cmux-mcp
+npm install
 ```
 
-The Inspector will provide a URL to access debugging tools in your browser.
+### Build
+
+```bash
+npm run build
+```
+
+### Watch Mode
+
+```bash
+npm run watch
+```
+
+### Test
+
+```bash
+npm test
+```
+
+Run E2E tests against a live cmux instance:
+
+```bash
+npm run e2e
+```
+
+### Inspect and Debug
+
+Use the MCP Inspector to test tools interactively:
+
+```bash
+npm run inspector
+```
+
+This opens a browser-based debugging interface at `http://localhost:3000`.
+
+## Safety Considerations
+
+- The user is responsible for safe usage. No command restrictions are built in.
+- Monitor AI activity and interrupt if the model behaves unexpectedly.
+- Start with small, focused tasks until you're confident in the model's behavior.
+- Commands run with your shell's permissions. Destructive commands can cause real damage.
+
+## License
+
+MIT
+
+## Credits
+
+- Forked from [ferrislucas/iterm-mcp](https://github.com/ferrislucas/iterm-mcp) and completely rewritten for cmux
+- Built for [cmux](https://github.com/manaflow-ai/cmux) by manaflow.ai
+- Model Context Protocol by Anthropic
