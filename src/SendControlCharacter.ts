@@ -4,49 +4,34 @@ import { promisify } from 'node:util';
 const execPromise = promisify(exec);
 
 class SendControlCharacter {
-  // This method is added for testing purposes
   protected async executeCommand(command: string): Promise<void> {
     await execPromise(command);
   }
 
   async send(letter: string): Promise<void> {
-    let controlCode: number;
-    
-    // Handle special cases for telnet escape sequences
+    let keyName: string;
+
+    // Handle special cases
     if (letter.toUpperCase() === ']') {
-      // ASCII 29 (GS - Group Separator) - the telnet escape character
-      controlCode = 29;
-    } 
-    // Add other special cases here as needed
+      // Telnet escape character - ASCII 29, send as raw control character
+      // cmux send-key doesn't have a name for this, use cmux send with escape sequence
+      await this.executeCommand(`cmux send -- $'\\x1d'`);
+      return;
+    }
     else if (letter.toUpperCase() === 'ESCAPE' || letter.toUpperCase() === 'ESC') {
-      // ASCII 27 (ESC - Escape)
-      controlCode = 27;
+      keyName = 'escape';
     }
     else {
-      // Validate input for standard control characters
       letter = letter.toUpperCase();
       if (!/^[A-Z]$/.test(letter)) {
         throw new Error('Invalid control character letter');
       }
-      
-      // Convert to standard control code (A=1, B=2, etc.)
-      controlCode = letter.charCodeAt(0) - 64;
+      // Convert to ctrl+<letter> format for cmux send-key
+      keyName = `ctrl+${letter.toLowerCase()}`;
     }
 
-    // AppleScript to send the control character
-    const ascript = `
-      tell application "iTerm2"
-        tell front window
-          tell current session of current tab
-            -- Send the control character
-            write text (ASCII character ${controlCode})
-          end tell
-        end tell
-      end tell
-    `;
-
     try {
-      await this.executeCommand(`osascript -e '${ascript}'`);
+      await this.executeCommand(`cmux send-key ${keyName}`);
     } catch (error: unknown) {
       throw new Error(`Failed to send control character: ${(error as Error).message}`);
     }

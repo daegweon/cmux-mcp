@@ -12,7 +12,7 @@ import SendControlCharacter from "./SendControlCharacter.js";
 
 const server = new Server(
   {
-    name: "iterm-mcp",
+    name: "cmux-mcp",
     version: "0.1.0",
   },
   {
@@ -27,7 +27,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     tools: [
       {
         name: "write_to_terminal",
-        description: "Writes text to the active iTerm terminal - often used to run a command in the terminal",
+        description: "Writes text to the active cmux terminal - often used to run a command in the terminal",
         inputSchema: {
           type: "object",
           properties: {
@@ -41,7 +41,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "read_terminal_output",
-        description: "Reads the output from the active iTerm terminal",
+        description: "Reads the output from the active cmux terminal",
         inputSchema: {
           type: "object",
           properties: {
@@ -55,7 +55,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "send_control_character",
-        description: "Sends a control character to the active iTerm terminal (e.g., Control-C, or special sequences like ']' for telnet escape)",
+        description: "Sends a control character to the active cmux terminal (e.g., Control-C, or special sequences like ']' for telnet escape)",
         inputSchema: {
           type: "object",
           properties: {

@@ -50,7 +50,7 @@ class ProcessTracker {
   ]);
   
   /**
-   * Get the active process and its resource usage in an iTerm tab
+   * Get the active process and its resource usage in a cmux terminal
    */
   async getActiveProcess(ttyPath: string): Promise<ActiveProcess | null> {
     try {

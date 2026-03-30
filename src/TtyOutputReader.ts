@@ -5,28 +5,19 @@ const execPromise = promisify(exec);
 
 export default class TtyOutputReader {
   static async call(linesOfOutput?: number) {
-    const buffer = await this.retrieveBuffer();
-    if (!linesOfOutput) {
-      return buffer;
+    if (linesOfOutput) {
+      const { stdout } = await execPromise(`cmux read-screen --lines ${linesOfOutput}`);
+      return stdout.trimEnd();
     }
-    const lines = buffer.split('\n');
-    return lines.slice(-linesOfOutput - 1).join('\n');
+    return this.retrieveBuffer();
   }
 
   static async retrieveBuffer(): Promise<string> {
-    const ascript = `
-      tell application "iTerm2"
-        tell front window
-          tell current session of current tab
-            set numRows to number of rows
-            set allContent to contents
-            return allContent
-          end tell
-        end tell
-      end tell
-    `;
-    
-    const { stdout: finalContent } = await execPromise(`osascript -e '${ascript}'`);
-    return finalContent.trim();
+    try {
+      const { stdout } = await execPromise('cmux read-screen --scrollback');
+      return stdout.trimEnd();
+    } catch (error: unknown) {
+      throw new Error(`Failed to read terminal: ${(error as Error).message}`);
+    }
   }
 }
