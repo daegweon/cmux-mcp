@@ -8,15 +8,39 @@ Claude가 cmux 터미널에서 명령을 실행하고, 출력을 읽고, 제어 
 
 ## 빠른 시작
 
-### 1. 클론 및 빌드
+### 방법 A: Claude Code 플러그인 (추천)
+
+```
+/plugin marketplace add daegweon/cmux-mcp
+/plugin install cmux-mcp@cmux-tools
+```
+
+끝입니다. MCP 서버가 자동으로 설정됩니다.
+
+### 방법 B: npx (빌드 불필요)
+
+`~/.claude/settings.json`을 편집합니다:
+
+```jsonc
+{
+  "mcpServers": {
+    "cmux-mcp": {
+      "command": "npx",
+      "args": ["-y", "cmux-mcp"]
+    }
+  }
+}
+```
+
+Claude Code를 재시작합니다.
+
+### 방법 C: 클론 및 빌드
 
 ```bash
 git clone https://github.com/daegweon/cmux-mcp.git
 cd cmux-mcp
 npm install && npm run build
 ```
-
-### 2. Claude Code에 등록
 
 `~/.claude/settings.json`을 편집합니다:
 
@@ -31,9 +55,7 @@ npm install && npm run build
 }
 ```
 
-### 3. Claude Code 재시작
-
-끝입니다. 이제 Claude가 cmux 터미널을 읽고 쓸 수 있습니다.
+Claude Code를 재시작합니다.
 
 <details>
 <summary>Claude Desktop 설정</summary>
@@ -211,6 +233,10 @@ npm run inspector      # MCP Inspector로 대화형 디버깅
 
 - [ferrislucas/iterm-mcp](https://github.com/ferrislucas/iterm-mcp)에서 포크
 - [cmux](https://github.com/manaflow-ai/cmux)를 위해 제작
+
+## 개인정보 보호
+
+cmux-mcp는 어떤 데이터도 수집하거나 전송하지 않습니다. 모든 처리는 로컬에서 이루어집니다. 자세한 내용은 [PRIVACY.md](./PRIVACY.md)를 참고하세요.
 
 ## 라이선스
 

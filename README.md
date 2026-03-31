@@ -8,15 +8,39 @@ Let Claude run commands, read output, and send control characters in your cmux t
 
 ## Quick Start
 
-### 1. Clone and build
+### Option A: Claude Code Plugin (Recommended)
+
+```
+/plugin marketplace add daegweon/cmux-mcp
+/plugin install cmux-mcp@cmux-tools
+```
+
+That's it. The MCP server is configured automatically.
+
+### Option B: npx (No build required)
+
+Edit `~/.claude/settings.json`:
+
+```jsonc
+{
+  "mcpServers": {
+    "cmux-mcp": {
+      "command": "npx",
+      "args": ["-y", "cmux-mcp"]
+    }
+  }
+}
+```
+
+Restart Claude Code.
+
+### Option C: Clone and build
 
 ```bash
 git clone https://github.com/daegweon/cmux-mcp.git
 cd cmux-mcp
 npm install && npm run build
 ```
-
-### 2. Add to Claude Code
 
 Edit `~/.claude/settings.json`:
 
@@ -31,9 +55,7 @@ Edit `~/.claude/settings.json`:
 }
 ```
 
-### 3. Restart Claude Code
-
-That's it. Claude can now read and write to your cmux terminal.
+Restart Claude Code.
 
 <details>
 <summary>Claude Desktop setup</summary>
@@ -200,6 +222,10 @@ npm run inspector      # Open MCP Inspector for interactive debugging
 
 - Forked from [ferrislucas/iterm-mcp](https://github.com/ferrislucas/iterm-mcp)
 - Built for [cmux](https://github.com/manaflow-ai/cmux) by manaflow.ai
+
+## Privacy
+
+cmux-mcp does not collect or transmit any data. All processing is local. See [PRIVACY.md](./PRIVACY.md) for details.
 
 ## License
 
