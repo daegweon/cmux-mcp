@@ -1,7 +1,7 @@
 {
   "name": "cmux-mcp",
   "description": "MCP server for AI terminal control via cmux — run commands, read output, send control characters. Background operation, no focus stealing.",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "author": {
     "name": "daegweon",
     "url": "https://github.com/daegweon"
