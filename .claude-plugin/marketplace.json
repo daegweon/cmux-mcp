@@ -1,0 +1,18 @@
+{
+  "name": "cmux-tools",
+  "description": "Terminal control tools for AI coding agents",
+  "owner": {
+    "name": "daegweon",
+    "url": "https://github.com/daegweon"
+  },
+  "plugins": [
+    {
+      "name": "cmux-mcp",
+      "source": {
+        "source": "github",
+        "repo": "daegweon/cmux-mcp"
+      },
+      "description": "MCP server for AI terminal control via cmux"
+    }
+  ]
+}
