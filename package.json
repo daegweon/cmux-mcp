@@ -31,7 +31,8 @@
     "cmux-mcp": "./build/index.js"
   },
   "files": [
-    "build"
+    "build",
+    ".claude-plugin"
   ],
   "scripts": {
     "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",

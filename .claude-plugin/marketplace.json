@@ -9,8 +9,8 @@
     {
       "name": "cmux-mcp",
       "source": {
-        "source": "github",
-        "repo": "daegweon/cmux-mcp"
+        "source": "npm",
+        "package": "cmux-mcp"
       },
       "description": "MCP server for AI terminal control via cmux"
     }
