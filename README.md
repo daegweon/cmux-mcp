@@ -275,7 +275,7 @@ This project was forked from [ferrislucas/iterm-mcp](https://github.com/ferrislu
 
 ### Smart completion detection
 
-cmux-mcp doesn't just blindly wait after sending a command. It monitors the TTY's CPU activity to know when a command actually finishes -- even for commands that produce output over time.
+cmux-mcp doesn't just blindly wait after sending a command. It monitors the TTY's CPU activity to know when a command actually finishes -- even for commands that produce output over time. As of v1.3.1, the polling interval was reduced from 350ms to 150ms and the idle threshold from 1000ms to 500ms, making `write_to_terminal` roughly 2x faster.
 
 ### Token efficient
 
@@ -311,7 +311,8 @@ macOS PTY
 
 | Module | Role |
 |--------|------|
-| `CommandExecutor` | Sends commands via `cmux send`, waits for completion |
+| `cmux-path` | Resolves `cmux` binary path: `CMUX_PATH` env > `which cmux` > macOS default paths > fallback |
+| `CommandExecutor` | Sends commands via `cmux send`, waits for completion. Caches TTY path for 60s. |
 | `TtyOutputReader` | Reads terminal buffer via `cmux read-screen` |
 | `SendControlCharacter` | Sends control keys via `cmux send-key` |
 | `ProcessTracker` | Monitors TTY processes for completion detection |

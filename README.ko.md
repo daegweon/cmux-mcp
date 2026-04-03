@@ -172,7 +172,7 @@ cmux-mcp는 cmux의 네이티브 CLI(`cmux send`, `cmux read-screen`, `cmux send
 
 ### 스마트 완료 감지
 
-명령을 보낸 후 무작정 기다리지 않습니다. TTY의 CPU 활동을 모니터링해서 명령이 실제로 완료된 시점을 감지합니다. 시간에 걸쳐 출력이 나오는 명령도 정확하게 처리합니다.
+명령을 보낸 후 무작정 기다리지 않습니다. TTY의 CPU 활동을 모니터링해서 명령이 실제로 완료된 시점을 감지합니다. 시간에 걸쳐 출력이 나오는 명령도 정확하게 처리합니다. v1.3.1에서 폴링 간격을 350ms→150ms, 유휴 판단 임계값을 1000ms→500ms로 단축하여 `write_to_terminal` 응답 속도가 약 2배 빨라졌습니다.
 
 ### 토큰 효율성
 
@@ -208,7 +208,8 @@ macOS PTY
 
 | 모듈 | 역할 |
 |------|------|
-| `CommandExecutor` | `cmux send`로 명령 전송, 완료 대기 |
+| `cmux-path` | `cmux` 바이너리 경로 탐색: `CMUX_PATH` 환경변수 > `which cmux` > macOS 기본 경로 > fallback |
+| `CommandExecutor` | `cmux send`로 명령 전송, 완료 대기. TTY 경로 60초 캐싱. |
 | `TtyOutputReader` | `cmux read-screen`으로 터미널 버퍼 읽기 |
 | `SendControlCharacter` | `cmux send-key`로 제어 키 전송 |
 | `ProcessTracker` | TTY 프로세스 모니터링, 완료 감지 |

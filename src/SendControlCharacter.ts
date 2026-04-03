@@ -1,6 +1,8 @@
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 
+import { CMUX_BIN } from './cmux-path.js';
+
 const execPromise = promisify(exec);
 
 class SendControlCharacter {
@@ -20,7 +22,7 @@ class SendControlCharacter {
 
     // Handle special cases
     if (letter.toUpperCase() === ']') {
-      await this.executeCommand(`cmux send${surfaceArg} -- $'\\x1d'`);
+      await this.executeCommand(`${CMUX_BIN} send${surfaceArg} -- $'\\x1d'`);
       return;
     }
     else if (letter.toUpperCase() === 'ESCAPE' || letter.toUpperCase() === 'ESC') {
@@ -35,7 +37,7 @@ class SendControlCharacter {
     }
 
     try {
-      await this.executeCommand(`cmux send-key${surfaceArg} ${keyName}`);
+      await this.executeCommand(`${CMUX_BIN} send-key${surfaceArg} ${keyName}`);
     } catch (error: unknown) {
       throw new Error(`Failed to send control character: ${(error as Error).message}`);
     }

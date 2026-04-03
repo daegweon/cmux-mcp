@@ -8,11 +8,12 @@ import { promisify } from 'node:util';
 import CommandExecutor from "./CommandExecutor.js";
 import TtyOutputReader from "./TtyOutputReader.js";
 import SendControlCharacter from "./SendControlCharacter.js";
+import { CMUX_BIN } from "./cmux-path.js";
 
 const execPromise = promisify(exec);
 
 async function runCmux(cmd: string): Promise<string> {
-  const { stdout } = await execPromise(`cmux ${cmd}`);
+  const { stdout } = await execPromise(`${CMUX_BIN} ${cmd}`);
   return stdout.trimEnd();
 }
 
@@ -23,7 +24,7 @@ function shellEscape(str: string): string {
 type ToolArgs = Record<string, unknown>;
 
 const server = new Server(
-  { name: "cmux-mcp", version: "1.3.0" },
+  { name: "cmux-mcp", version: "1.3.1" },
   { capabilities: { tools: {} } }
 );
 
