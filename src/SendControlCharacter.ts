@@ -4,18 +4,23 @@ import { promisify } from 'node:util';
 const execPromise = promisify(exec);
 
 class SendControlCharacter {
+  private _surface?: string;
+
+  constructor(surface?: string) {
+    this._surface = surface;
+  }
+
   protected async executeCommand(command: string): Promise<void> {
     await execPromise(command);
   }
 
   async send(letter: string): Promise<void> {
     let keyName: string;
+    const surfaceArg = this._surface ? ` --surface ${this._surface}` : '';
 
     // Handle special cases
     if (letter.toUpperCase() === ']') {
-      // Telnet escape character - ASCII 29, send as raw control character
-      // cmux send-key doesn't have a name for this, use cmux send with escape sequence
-      await this.executeCommand(`cmux send -- $'\\x1d'`);
+      await this.executeCommand(`cmux send${surfaceArg} -- $'\\x1d'`);
       return;
     }
     else if (letter.toUpperCase() === 'ESCAPE' || letter.toUpperCase() === 'ESC') {
@@ -26,12 +31,11 @@ class SendControlCharacter {
       if (!/^[A-Z]$/.test(letter)) {
         throw new Error('Invalid control character letter');
       }
-      // Convert to ctrl+<letter> format for cmux send-key
       keyName = `ctrl+${letter.toLowerCase()}`;
     }
 
     try {
-      await this.executeCommand(`cmux send-key ${keyName}`);
+      await this.executeCommand(`cmux send-key${surfaceArg} ${keyName}`);
     } catch (error: unknown) {
       throw new Error(`Failed to send control character: ${(error as Error).message}`);
     }

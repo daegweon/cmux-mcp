@@ -4,7 +4,7 @@
 
 **MCP server that gives AI agents full control of your [cmux](https://github.com/manaflow-ai/cmux) terminal.**
 
-Let Claude run commands, read output, and send control characters in your cmux terminal -- all through the Model Context Protocol. Works in the background. No focus stealing.
+Let Claude run commands, read output, manage tabs/panes/workspaces/windows, and send control characters in your cmux terminal -- all through the Model Context Protocol. Works in the background. No focus stealing.
 
 ## Quick Start
 
@@ -89,34 +89,143 @@ cmux-mcp communicates over stdio. Point your MCP client to `node /path/to/cmux-m
 - macOS
 - [cmux.app](https://github.com/manaflow-ai/cmux) installed and running
 - Node.js 18+
+- cmux socket control mode set to **Automation** or **Open Access** (Settings > Automation > Socket Control Mode)
 
-## What Can It Do?
+## Tools
 
-cmux-mcp provides three tools to any MCP client:
+cmux-mcp exposes the full cmux CLI as MCP tools. All terminal I/O tools support an optional `surface` parameter for targeting specific tabs.
 
-### `write_to_terminal`
+### Terminal I/O
 
-Send commands to your terminal. Enter is appended automatically. Returns the number of new output lines so the agent knows how much to read back.
+| Tool | Description |
+|------|-------------|
+| `write_to_terminal` | Send commands to the terminal. Enter is appended automatically. Returns new output line count. |
+| `read_terminal_output` | Read the last N lines from the terminal buffer. |
+| `send_control_character` | Send Ctrl+C, Ctrl+Z, Escape, or any control character. |
 
-```
-"Run npm test in my terminal"
-```
+### Surface (Tab) Management
 
-### `read_terminal_output`
+| Tool | Description |
+|------|-------------|
+| `list_surfaces` | List all tabs in a workspace with IDs and titles. |
+| `new_surface` | Create a new terminal tab. |
+| `close_surface` | Close a specific tab. |
+| `focus_surface` | Focus (activate) a specific tab. |
+| `move_surface` | Move a tab to a different pane, window, or position. |
+| `reorder_surface` | Reorder a tab within its pane. |
+| `rename_tab` | Rename a tab. |
+| `new_split` | Split the current surface into a new pane. |
+| `drag_surface_to_split` | Drag a surface to create a split. |
+| `refresh_surfaces` | Refresh all surfaces. |
+| `surface_health` | Check health of surfaces. |
 
-Read the last N lines from the terminal. Only fetches what you ask for -- no wasted tokens on the full scrollback.
+### Pane Management
 
-```
-"Show me the last 20 lines of terminal output"
-```
+| Tool | Description |
+|------|-------------|
+| `list_panes` | List all panes in a workspace. |
+| `new_pane` | Create a new pane (split) with direction. |
+| `focus_pane` | Focus a specific pane. |
+| `resize_pane` | Resize a pane in a given direction. |
+| `swap_pane` | Swap two panes. |
+| `break_pane` | Break a pane out into a new workspace. |
+| `join_pane` | Join a pane into another pane. |
+| `last_pane` | Switch to the last active pane. |
+| `list_panels` | List all panels in a workspace. |
+| `focus_panel` | Focus a specific panel. |
 
-### `send_control_character`
+### Window Management
 
-Send Ctrl+C, Ctrl+Z, Escape, or any control character. Interrupt stuck processes, exit REPLs, send telnet escape sequences.
+| Tool | Description |
+|------|-------------|
+| `list_windows` | List all windows. |
+| `new_window` | Create a new window. |
+| `close_window` | Close a specific window. |
+| `focus_window` | Focus a specific window. |
+| `current_window` | Show current window info. |
+| `rename_window` | Rename the current window. |
+| `next_window` / `previous_window` / `last_window` | Navigate between windows. |
+| `move_workspace_to_window` | Move a workspace to a different window. |
 
-```
-"Stop the running process" → sends Ctrl+C
-```
+### Workspace Management
+
+| Tool | Description |
+|------|-------------|
+| `list_workspaces` | List all workspaces. |
+| `new_workspace` | Create a new workspace with optional cwd/command. |
+| `close_workspace` | Close a specific workspace. |
+| `select_workspace` | Switch to a specific workspace. |
+| `rename_workspace` | Rename a workspace. |
+| `current_workspace` | Show current workspace info. |
+| `reorder_workspace` | Reorder a workspace in the sidebar. |
+
+### Search & Structure
+
+| Tool | Description |
+|------|-------------|
+| `find_window` | Search for a window by content or title. |
+| `tree` | Show the full tree structure (windows/workspaces/panes/surfaces). |
+| `identify` | Show identity info for the current surface/workspace. |
+
+### Notifications
+
+| Tool | Description |
+|------|-------------|
+| `notify` | Send a notification with title, subtitle, and body. |
+| `list_notifications` | List all notifications. |
+| `clear_notifications` | Clear all notifications. |
+
+### Sidebar Metadata
+
+| Tool | Description |
+|------|-------------|
+| `set_status` / `clear_status` / `list_status` | Manage status entries in the sidebar. |
+| `set_progress` / `clear_progress` | Manage a progress bar in the sidebar. |
+| `sidebar_state` | Show the current sidebar state. |
+
+### Log
+
+| Tool | Description |
+|------|-------------|
+| `log` | Write a log entry to the workspace sidebar. |
+| `clear_log` | Clear log entries. |
+| `list_log` | List log entries. |
+
+### Buffer
+
+| Tool | Description |
+|------|-------------|
+| `set_buffer` | Set a named buffer with text content. |
+| `list_buffers` | List all buffers. |
+| `paste_buffer` | Paste a buffer into the terminal. |
+
+### Terminal Control
+
+| Tool | Description |
+|------|-------------|
+| `clear_history` | Clear terminal scrollback history. |
+| `capture_pane` | Capture pane content (tmux-compatible). |
+| `respawn_pane` | Respawn a pane (restart the shell). |
+| `pipe_pane` | Pipe pane output to a shell command. |
+| `display_message` | Display a message overlay. |
+| `trigger_flash` | Trigger a visual flash on the terminal. |
+
+### Hooks & Misc
+
+| Tool | Description |
+|------|-------------|
+| `set_hook` | Set, list, or unset event hooks. |
+| `wait_for` | Wait for or send a named signal. |
+| `set_app_focus` | Set the app focus state. |
+| `markdown_open` | Open a markdown file in a formatted viewer with live reload. |
+| `version` | Show cmux version. |
+| `ping` | Ping the cmux socket. |
+
+### Browser
+
+| Tool | Description |
+|------|-------------|
+| `browser` | Control the cmux built-in browser with subcommands: `open`, `navigate`, `snapshot`, `click`, `type`, `eval`, `screenshot`, and [many more](https://github.com/manaflow-ai/cmux). |
 
 ### Real-World Examples
 
@@ -124,6 +233,11 @@ Send Ctrl+C, Ctrl+Z, Escape, or any control character. Interrupt stuck processes
 > "Run the test suite and tell me which tests are failing"
 
 Claude sends `npm test`, reads the output, and summarizes the failures.
+
+**Multi-tab SSH sessions:**
+> "Open two new tabs, SSH into server-a in one and server-b in the other, then compare their disk usage"
+
+Claude creates tabs, sends SSH commands to each, reads output from both, and compares.
 
 **Interactive REPL session:**
 > "Open a Python REPL and check if pandas is installed"
@@ -186,7 +300,7 @@ MCP Client (Claude Code, Claude Desktop, etc.)
     |  stdio
 cmux-mcp server
     |  child_process
-cmux CLI (send / read-screen / send-key)
+cmux CLI (send / read-screen / send-key / ...)
     |  Unix socket
 cmux.app (Ghostty-based terminal)
     |

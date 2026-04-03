@@ -4,49 +4,32 @@ import { openSync, closeSync } from 'node:fs';
 import ProcessTracker from './ProcessTracker.js';
 import TtyOutputReader from './TtyOutputReader.js';
 
-/**
- * CommandExecutor handles sending commands to cmux terminal via cmux CLI.
- */
-
 const execPromise = promisify(exec);
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 class CommandExecutor {
   private _execPromise: typeof execPromise;
+  private _surface?: string;
 
-  constructor(execPromiseOverride?: typeof execPromise) {
+  constructor(execPromiseOverride?: typeof execPromise, surface?: string) {
     this._execPromise = execPromiseOverride || execPromise;
+    this._surface = surface;
   }
 
-  /**
-   * Executes a command in the cmux terminal.
-   *
-   * Uses `cmux send` CLI to send text with \n appended to simulate Enter.
-   * Then waits for the command to complete by monitoring process activity.
-   *
-   * @param command The command to execute (can contain newlines)
-   * @returns A promise that resolves to the terminal output after command execution
-   */
   async executeCommand(command: string): Promise<string> {
     try {
-      // cmux send handles \n as Enter natively
-      // Append \n to simulate pressing Enter after the command
       const textToSend = command + '\n';
+      const surfaceArg = this._surface ? ` --surface ${this._surface}` : '';
+      await this._execPromise(`cmux send${surfaceArg} -- ${this.shellEscape(textToSend)}`);
 
-      // Use cmux send CLI - escape for shell safely
-      await this._execPromise(`cmux send -- ${this.shellEscape(textToSend)}`);
-
-      // Get the TTY path and check if it's waiting for user input
       const ttyPath = await this.retrieveTtyPath();
       while (await this.isWaitingForUserInput(ttyPath) === false) {
         await sleep(100);
       }
 
-      // Give a small delay for output to settle
       await sleep(200);
 
-      // Retrieve the terminal output after command execution
-      const afterCommandBuffer = await TtyOutputReader.retrieveBuffer();
+      const afterCommandBuffer = await TtyOutputReader.retrieveBuffer(this._surface);
       return afterCommandBuffer;
     } catch (error: unknown) {
       throw new Error(`Failed to execute command: ${(error as Error).message}`);
@@ -88,12 +71,7 @@ class CommandExecutor {
     }
   }
 
-  /**
-   * Escapes a string for safe use as a shell argument.
-   * Uses single-quote wrapping with proper escaping.
-   */
   private shellEscape(str: string): string {
-    // Replace single quotes with '\'' (end quote, escaped quote, start quote)
     return "'" + str.replace(/'/g, "'\\''") + "'";
   }
 
